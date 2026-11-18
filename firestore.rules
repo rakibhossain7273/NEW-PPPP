@@ -1,0 +1,165 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidStr(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['syncKey', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['syncKey', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.syncKey is string
+        && data.syncKey.size() >= 16
+        && data.syncKey.size() <= 64
+        && data.syncKey.matches('^[a-zA-Z0-9_\\-]+$')
+        && isValidStr(data.email, 160)
+        && isValidStr(data.displayName, 160)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidApplication(data) {
+      return data.keys().hasAll([
+          'ownerId', 'nameBn', 'nameEn', 'birthOrder', 'gender', 'mobile', 'dob',
+          'division', 'district', 'upazila', 'unionOrPourashava', 'wardNo',
+          'postOfficeBn', 'postOfficeEn', 'villageBn', 'villageEn',
+          'holdingNoBn', 'holdingNoEn', 'sameAddressForAll',
+          'fatherNameBn', 'fatherNameEn', 'fatherBrn', 'fatherDob', 'fatherNid', 'fatherNationality',
+          'motherNameBn', 'motherNameEn', 'motherBrn', 'motherDob', 'motherNid', 'motherNationality',
+          'religion', 'birthPlaceCountry', 'applicantRelation', 'customFields',
+          'bdrisTrackingId', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'nameBn', 'nameEn', 'birthOrder', 'gender', 'mobile', 'dob',
+          'division', 'district', 'upazila', 'unionOrPourashava', 'wardNo',
+          'postOfficeBn', 'postOfficeEn', 'villageBn', 'villageEn',
+          'holdingNoBn', 'holdingNoEn', 'sameAddressForAll',
+          'fatherNameBn', 'fatherNameEn', 'fatherBrn', 'fatherDob', 'fatherNid', 'fatherNationality',
+          'motherNameBn', 'motherNameEn', 'motherBrn', 'motherDob', 'motherNid', 'motherNationality',
+          'religion', 'birthPlaceCountry', 'applicantRelation', 'customFields',
+          'bdrisTrackingId', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId == request.auth.uid
+        && isValidStr(data.nameBn, 160)
+        && isValidStr(data.nameEn, 160)
+        && isValidStr(data.birthOrder, 20)
+        && isValidStr(data.gender, 30)
+        && isValidStr(data.mobile, 30)
+        && isValidStr(data.dob, 20)
+        && isValidStr(data.division, 100)
+        && isValidStr(data.district, 100)
+        && isValidStr(data.upazila, 120)
+        && isValidStr(data.unionOrPourashava, 120)
+        && isValidStr(data.wardNo, 20)
+        && isValidStr(data.postOfficeBn, 120)
+        && isValidStr(data.postOfficeEn, 120)
+        && isValidStr(data.villageBn, 160)
+        && isValidStr(data.villageEn, 160)
+        && isValidStr(data.holdingNoBn, 120)
+        && isValidStr(data.holdingNoEn, 120)
+        && data.sameAddressForAll is bool
+        && isValidStr(data.fatherNameBn, 160)
+        && isValidStr(data.fatherNameEn, 160)
+        && isValidStr(data.fatherBrn, 30)
+        && isValidStr(data.fatherDob, 20)
+        && isValidStr(data.fatherNid, 30)
+        && isValidStr(data.fatherNationality, 60)
+        && isValidStr(data.motherNameBn, 160)
+        && isValidStr(data.motherNameEn, 160)
+        && isValidStr(data.motherBrn, 30)
+        && isValidStr(data.motherDob, 20)
+        && isValidStr(data.motherNid, 30)
+        && isValidStr(data.motherNationality, 60)
+        && isValidStr(data.religion, 60)
+        && isValidStr(data.birthPlaceCountry, 80)
+        && isValidStr(data.applicantRelation, 60)
+        && data.customFields is list
+        && data.customFields.size() <= 20
+        && (data.customFields.size() == 0 || data.customFields[0] is map)
+        && isValidStr(data.bdrisTrackingId, 64)
+        && data.status in ['draft', 'pushed', 'submitted']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if isEmailVerified()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isEmailVerified()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().email == existing().email
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['syncKey', 'displayName', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /applications/{appId} {
+      allow get: if isSignedIn() && isValidId(appId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isEmailVerified()
+        && isValidId(appId)
+        && isValidApplication(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isEmailVerified()
+        && isValidId(appId)
+        && isValidApplication(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (existing().status != 'submitted' && incoming().diff(existing()).affectedKeys().hasOnly([
+            'nameBn', 'nameEn', 'birthOrder', 'gender', 'mobile', 'dob',
+            'division', 'district', 'upazila', 'unionOrPourashava', 'wardNo',
+            'postOfficeBn', 'postOfficeEn', 'villageBn', 'villageEn',
+            'holdingNoBn', 'holdingNoEn', 'sameAddressForAll',
+            'fatherNameBn', 'fatherNameEn', 'fatherBrn', 'fatherDob', 'fatherNid', 'fatherNationality',
+            'motherNameBn', 'motherNameEn', 'motherBrn', 'motherDob', 'motherNid', 'motherNationality',
+            'religion', 'birthPlaceCountry', 'applicantRelation', 'customFields',
+            'bdrisTrackingId', 'status', 'updatedAt'
+          ]))
+          || (existing().status == 'submitted' && incoming().diff(existing()).affectedKeys().hasOnly([
+            'bdrisTrackingId', 'updatedAt'
+          ]))
+        );
+      allow delete: if isEmailVerified() && isValidId(appId) && existing().ownerId == request.auth.uid;
+    }
+  }
+}

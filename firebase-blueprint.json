@@ -1,0 +1,136 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Private operator profile storing personal Chrome extension sync key.",
+      "type": "object",
+      "properties": {
+        "syncKey": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "High-entropy sync key linking the web app to the user's Chrome extension."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["syncKey", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "BdrisApplication": {
+      "title": "BDRIS Birth Registration Application",
+      "description": "Saved applicant personal details, address, parents' BRN/NID IDs, and BDRIS tracking number.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "nameBn": { "type": "string", "maxLength": 160 },
+        "nameEn": { "type": "string", "maxLength": 160 },
+        "birthOrder": { "type": "string", "maxLength": 20 },
+        "gender": { "type": "string", "maxLength": 30 },
+        "mobile": { "type": "string", "maxLength": 30 },
+        "dob": { "type": "string", "maxLength": 20 },
+        "division": { "type": "string", "maxLength": 100 },
+        "district": { "type": "string", "maxLength": 100 },
+        "upazila": { "type": "string", "maxLength": 120 },
+        "unionOrPourashava": { "type": "string", "maxLength": 120 },
+        "wardNo": { "type": "string", "maxLength": 20 },
+        "postOfficeBn": { "type": "string", "maxLength": 120 },
+        "postOfficeEn": { "type": "string", "maxLength": 120 },
+        "villageBn": { "type": "string", "maxLength": 160 },
+        "villageEn": { "type": "string", "maxLength": 160 },
+        "holdingNoBn": { "type": "string", "maxLength": 120 },
+        "holdingNoEn": { "type": "string", "maxLength": 120 },
+        "sameAddressForAll": { "type": "boolean" },
+        "fatherNameBn": { "type": "string", "maxLength": 160 },
+        "fatherNameEn": { "type": "string", "maxLength": 160 },
+        "fatherBrn": { "type": "string", "maxLength": 30 },
+        "fatherDob": { "type": "string", "maxLength": 20 },
+        "fatherNid": { "type": "string", "maxLength": 30 },
+        "fatherNationality": { "type": "string", "maxLength": 60 },
+        "motherNameBn": { "type": "string", "maxLength": 160 },
+        "motherNameEn": { "type": "string", "maxLength": 160 },
+        "motherBrn": { "type": "string", "maxLength": 30 },
+        "motherDob": { "type": "string", "maxLength": 20 },
+        "motherNid": { "type": "string", "maxLength": 30 },
+        "motherNationality": { "type": "string", "maxLength": 60 },
+        "religion": { "type": "string", "maxLength": 60 },
+        "birthPlaceCountry": { "type": "string", "maxLength": 80 },
+        "applicantRelation": { "type": "string", "maxLength": 60 },
+        "customFields": { "type": "array" },
+        "bdrisTrackingId": { "type": "string", "maxLength": 64 },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "pushed", "submitted"]
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "nameBn",
+        "nameEn",
+        "birthOrder",
+        "gender",
+        "mobile",
+        "dob",
+        "division",
+        "district",
+        "upazila",
+        "unionOrPourashava",
+        "wardNo",
+        "postOfficeBn",
+        "postOfficeEn",
+        "villageBn",
+        "villageEn",
+        "holdingNoBn",
+        "holdingNoEn",
+        "sameAddressForAll",
+        "fatherNameBn",
+        "fatherNameEn",
+        "fatherBrn",
+        "fatherDob",
+        "fatherNid",
+        "fatherNationality",
+        "motherNameBn",
+        "motherNameEn",
+        "motherBrn",
+        "motherDob",
+        "motherNid",
+        "motherNationality",
+        "religion",
+        "birthPlaceCountry",
+        "applicantRelation",
+        "customFields",
+        "bdrisTrackingId",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user settings and Chrome extension sync key."
+    },
+    "/applications/{appId}": {
+      "schema": { "$ref": "#/entities/BdrisApplication" },
+      "description": "Saved BDRIS birth registration records owned by each authenticated user."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "BDRIS SmartForm",
+  "description": "Smart Bengali & English birth registration form parser, validator, and automated browser auto-fill assistant for bdris.gov.bd.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
